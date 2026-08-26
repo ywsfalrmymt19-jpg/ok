@@ -64,5 +64,4 @@ dependencies {
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.foundation:foundation-layout")
     implementation("androidx.compose.material3:material3")
-    implementation("androidx.browser:browser:1.8.0")
 }

@@ -9,13 +9,13 @@ on:
 
 jobs:
   build:
-    name: Build Debug APK
+    name: Build Android APK
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
-      - name: Checkout Code
+      - name: Checkout Source Code
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
@@ -24,47 +24,45 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: 8.6
 
-      - name: Grant Execute Permission for Gradlew
-        run: chmod +x gradlew || true
-
-      - name: Build Debug APK with Gradle
-        run: gradle :app:assembleDebug --stacktrace --no-daemon
-
-      - name: Locate and Collect APK
+      - name: Build Debug APK
         run: |
-          mkdir -p output_apks
-          find . -name "*debug*.apk" -type f -exec cp {} output_apks/app-debug.apk \; || true
-          ls -la output_apks/
+          gradle :app:assembleDebug --stacktrace --no-daemon
 
-      - name: Upload APK Artifact
+      - name: Collect Generated APKs
+        id: collect
+        run: |
+          mkdir -p build_output
+          find app/build/outputs/apk -name "*.apk" -type f -exec cp {} build_output/ \;
+          ls -la build_output/
+
+      - name: Upload APK as Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug-apk
-          path: |
-            app/build/outputs/apk/debug/*.apk
-            output_apks/*.apk
+          name: DrMalek-Android-APK
+          path: build_output/*.apk
+          retention-days: 30
 
-      - name: Create GitHub Release with APK
+      - name: Publish GitHub Release
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
-          name: "Dr. Malek App v1.0.${{ github.run_number }}"
+          name: "تطبيق الدكتور مالك الرميمة v1.0.${{ github.run_number }}"
           body: |
-            ### 🎉 تطبيق الدكتور مالك الرميمة - إصدار الأندرويد APK
-            - **اسم التطبيق**: Dr. Malek App
-            - **الإصدار**: v1.0.${{ github.run_number }}
-            - **الحالة**: جاهز للتثبيت المباشر على الهاتف
+            ### 📱 تطبيق الدكتور مالك الرميمة - Android APK
+            - **الإصدار**: 1.0.${{ github.run_number }}
+            - **الحالة**: تم البناء بنجاح وجاهز للتثبيت المباشر على الهاتف.
 
-            اضغط على ملف `app-debug.apk` المرفق في الأسفل لتحميله مباشرة.
-          files: |
-            app/build/outputs/apk/debug/*.apk
-            output_apks/*.apk
+            قم بتحميل ملف الـ APK المرفق وتثبيته مباشرة.
+          files: build_output/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.OKAP_TOKEN || secrets.GITHUB_TOKEN }}
         continue-on-error: true
