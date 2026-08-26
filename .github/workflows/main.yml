@@ -27,45 +27,26 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
+    - name: Accept Android SDK Licenses
+      run: |
+        yes | sdkmanager --licenses || true
+
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: 8.6
 
-    - name: Decode Keystore (if secret provided)
-      env:
-        KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+    - name: Build Android APK
       run: |
-        if [ -n "$KEYSTORE_BASE64" ]; then
-          echo "$KEYSTORE_BASE64" | base64 --decode > release.keystore
-          echo "Keystore decoded successfully."
-        else
-          echo "No KEYSTORE_BASE64 provided, using debug signing."
-        fi
+        chmod +x gradlew || true
+        gradle assembleDebug --stacktrace --no-daemon
 
-    - name: Ensure Gradle Wrapper & Permissions
-      run: |
-        if [ ! -f "./gradlew" ]; then
-          echo "Generating Gradle wrapper..."
-          gradle wrapper
-        fi
-        chmod +x gradlew
-
-    - name: Build Android APK with Gradle
-      env:
-        CM_KEYSTORE_PASSWORD: ${{ secrets.CM_KEYSTORE_PASSWORD }}
-        CM_KEY_ALIAS: ${{ secrets.CM_KEY_ALIAS }}
-        CM_KEY_PASSWORD: ${{ secrets.CM_KEY_PASSWORD }}
-      run: |
-        ./gradlew assembleDebug --stacktrace
-        if [ -f "release.keystore" ]; then
-          ./gradlew assembleRelease --stacktrace || echo "Release build completed."
-        fi
-
-    - name: Locate Generated APKs
-      id: find_apks
+    - name: Collect Generated APKs
+      id: collect_apks
       run: |
         mkdir -p output_apks
-        find app/build/outputs/apk -name "*.apk" -exec cp {} output_apks/ \;
-        echo "Generated APK files:"
+        find . -name "*.apk" -type f -exec cp {} output_apks/ \;
+        echo "Found APK files:"
         ls -la output_apks/
 
     - name: Upload APKs to Artifacts
@@ -85,7 +66,7 @@ jobs:
           ### 🎉 Dr. Malek Al-Romaimah - Android APK
           - **App Name**: Dr. Malek App (7 Hubs + Wallpaper Studio)
           - **Version**: 1.0.${{ github.run_number }}
-          - **Built on**: GitHub Actions
+          - **Build System**: Gradle 8.6 / JDK 17 / Jetpack Compose
 
           Download the direct `.apk` file below and install it directly on your Android phone.
         files: output_apks/*.apk
