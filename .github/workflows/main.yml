@@ -23,22 +23,27 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Make Gradlew Executable
-        run: chmod +x gradlew
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.6
 
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug --stacktrace
+      - name: Generate Wrapper & Build Debug APK
+        run: |
+          gradle wrapper --gradle-version 8.6
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug --stacktrace --no-daemon
 
       - name: Collect Generated APKs
         id: collect
         run: |
           mkdir -p build_output
-          find app/build/outputs/apk -name "*.apk" -type f -exec cp {} build_output/ \;
+          find . -name "*debug*.apk" -type f -exec cp {} build_output/DrMalekApp-debug.apk \;
+          echo "Generated APKs:"
           ls -la build_output/
 
       - name: Upload APK as Artifact
@@ -56,10 +61,8 @@ jobs:
           name: "تطبيق الدكتور مالك الرميمة v1.0.${{ github.run_number }}"
           body: |
             ### 📱 تطبيق الدكتور مالك الرميمة - Android APK
-            - **الإصدار**: 1.0.${{ github.run_number }}
-            - **الحالة**: تم البناء بنجاح وجاهز للتثبيت المباشر على الهاتف.
-
-            قم بتحميل ملف الـ APK المرفق وتثبيته مباشرة.
+            - **الإصدار**: v1.0.${{ github.run_number }}
+            - **الحالة**: تم بناء ملف الـ APK بنجاح وجاهز للتحميل والتثبيت المباشر على هاتفك.
           files: build_output/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.OKAP_TOKEN || secrets.GITHUB_TOKEN }}
