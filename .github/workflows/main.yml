@@ -23,18 +23,16 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: gradle
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: 8.6
+      - name: Make Gradlew Executable
+        run: chmod +x gradlew
 
       - name: Build Debug APK
-        run: |
-          gradle :app:assembleDebug --stacktrace --no-daemon
+        run: ./gradlew assembleDebug --stacktrace
 
       - name: Collect Generated APKs
         id: collect
