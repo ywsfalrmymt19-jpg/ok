@@ -36,23 +36,23 @@ jobs:
       with:
         gradle-version: 8.6
 
-    - name: Build Android APK
+    - name: Build Android APK with Gradle
       run: |
         chmod +x gradlew || true
-        gradle assembleDebug --stacktrace --no-daemon
+        gradle :app:assembleDebug --stacktrace --no-daemon
 
     - name: Collect Generated APKs
       id: collect_apks
       run: |
         mkdir -p output_apks
-        find . -name "*.apk" -type f -exec cp {} output_apks/ \;
+        find app/build/outputs/apk -name "*.apk" -type f -exec cp {} output_apks/ \;
         echo "Found APK files:"
         ls -la output_apks/
 
-    - name: Upload APKs to Artifacts
+    - name: Upload APK to Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: DrMalek-Android-APK
+        name: DrMalek-App-Debug
         path: output_apks/*.apk
         retention-days: 30
 
@@ -64,11 +64,11 @@ jobs:
         name: "Dr. Malek App v1.0.${{ github.run_number }}"
         body: |
           ### 🎉 Dr. Malek Al-Romaimah - Android APK
-          - **App Name**: Dr. Malek App (7 Hubs + Wallpaper Studio)
-          - **Version**: 1.0.${{ github.run_number }}
-          - **Build System**: Gradle 8.6 / JDK 17 / Jetpack Compose
+          - **App Name**: Dr. Malek App
+          - **Build**: Release/Debug APK
+          - **Status**: Ready for Direct Install
 
-          Download the direct `.apk` file below and install it directly on your Android phone.
+          Click on the `.apk` file below to download and install on your phone.
         files: output_apks/*.apk
       env:
         GITHUB_TOKEN: ${{ secrets.OKAP_TOKEN || secrets.GITHUB_TOKEN }}
